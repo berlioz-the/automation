@@ -32,12 +32,18 @@ The script does following:
 Run using:
 
 ```bash
-bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/create.sh)"
+curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/create.sh
 ```
 
 or
 
 ```bash
-bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/create.sh)"
+wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/create.sh
 ```
 
+then
+
+```bash
+chmod +x create.sh
+./create.sh -p <project-name> [-q]
+```
