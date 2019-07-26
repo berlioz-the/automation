@@ -11,6 +11,11 @@
 # bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
 #
 
+
+########################################################
+################ TERIMNAL OUTPUT #######################
+########################################################
+
 if test -t 1; then # if terminal
     ncolors=$(which tput > /dev/null && tput colors) # supports color
     if test -n "$ncolors" && test $ncolors -ge 8; then
@@ -73,6 +78,10 @@ print_header() {
     echo "${red}================================================================================${normal}"
 }
 
+########################################################
+################ COMMAND EXECUTION #####################
+########################################################
+
 bail() {
     echo 'Error executing command, exiting'
     exit 1
@@ -129,7 +138,9 @@ exec_cmd_no_output() {
     fi
 }
 
-##################
+########################################################
+####################### LOGIC ##########################
+########################################################
 
 createServiceAccount() {
     SVC_ACCOUNT_NAME=$1
@@ -155,95 +166,6 @@ createServiceAccount() {
     fi
 }
 
-concat_line() {
-    prefix=$1
-    suffix=$2
-    echo "${prefix}${suffix}\n"
-}
-
-createRole() {
-    local role_name=$1
-    final_role_name=berlioz.$role_name
-    print_status "Querying role: $final_role_name..."
-    local role_id="projects/$PROJECT_ID/roles/berlioz.$role_name"
-
-    local role_title=${ROLE_NAMES[$role_name]}
-    local role_permissions_str=${ROLE_PERMISSIONS[$role_name]}
-
-    local role_data=""
-    role_data=$(concat_line "$role_data" "title: ${role_title}")
-    role_data=$(concat_line "$role_data" "name: $role_id")
-    role_data=$(concat_line "$role_data" "description: $role_title Role")
-    role_data=$(concat_line "$role_data" "stage: GA")
-    role_data=$(concat_line "$role_data" "includedPermissions:")
-
-    IFS=$'\n'
-    read -d '' -r -a role_permissions_arr <<< "${role_permissions_str[functions]}"
-    for i in "${role_permissions_arr[@]}"; do # access each element of array
-        role_data=$(concat_line $role_data "- $i")
-    done
-    IFS=' '
-
-    TMP_ROLE_FILE=tmp-role.yaml
-
-    exec_cmd_no_bail_no_output \
-        "gcloud iam roles describe $final_role_name --project $PROJECT_ID" \
-        existing_role \
-        existing_role_result
-    echo "$existing_role"
-    if [[ $existing_role_result == "0" ]]; then
-
-        is_deleted_value=$(echo "$existing_role" | grep "^deleted: true")
-        echo "$is_deleted_value"
-        if [[ ! -z $is_deleted_value ]]; then
-            print_status "Undeleting Role: $final_role_name..."
-
-            exec_cmd \
-                "gcloud iam roles undelete $final_role_name --project $PROJECT_ID" \
-                result \
-                return_code
-        fi
-
-        print_status "Updating Role: $final_role_name..."
-
-        etag_value=$(echo "$existing_role" | grep "^etag\:")
-        role_data=$(concat_line "$role_data" "${etag_value}")
-        echo -e "${role_data}" > $TMP_ROLE_FILE
-
-        exec_cmd_no_bail \
-            "gcloud iam roles update $final_role_name --project $PROJECT_ID --file $TMP_ROLE_FILE --quiet" \
-            result \
-            return_code
-           
-        rm $TMP_ROLE_FILE
-        if [[ $return_code != "0" ]]; then
-            bail_with_error \
-                "ERROR: Could not update role $final_role_name" \
-                "Reason: $result";
-        else
-            print_status "Role $final_role_name updated"
-        fi
-    else
-        print_status "Creating Role: $final_role_name..."
-
-        echo -e "${role_data}" > $TMP_ROLE_FILE
-        
-        exec_cmd_no_bail \
-            "gcloud iam roles create $final_role_name --project $PROJECT_ID --file $TMP_ROLE_FILE --quiet" \
-            result \
-            return_code
-           
-        rm $TMP_ROLE_FILE
-        if [[ $return_code != "0" ]]; then
-            bail_with_error \
-                "ERROR: Could not create role $final_role_name" \
-                "Reason: $result";
-        else
-            print_status "Role $final_role_name created"
-        fi
-    fi
-}
-
 attachServiceAccountRole() {
     local serviceAccountId=$1
     local roleId=$2
@@ -254,18 +176,9 @@ attachServiceAccountRole() {
         "Reason: $result"
 }
 
-
 setupRoles() {
-    print_status "Creating roles..."
 
-    role_name_arr=("roles/container.admin")
-
-    for role_key in "${!ROLE_NAMES[@]}"
-    do
-        role_id="projects/$PROJECT_ID/roles/berlioz.$role_key"
-        role_name_arr+=( "$role_id" )
-        createRole $role_key
-    done
+    role_name_arr=("roles/owner")
 
     print_status "Attaching roles..."
     for ((i=0; i<${#role_name_arr[@]}; i++)); do
@@ -343,19 +256,24 @@ fetchGCPAccoutId() {
 
 runner() {
 
-print_header "Berlioz GCP Account Setup Script" \
+print_header "GCP Project Creator" \
 "Steps to be performed in this script:
 1. Login to GCP account
-2. Create service account ${bold}\"berlioz-robot\"${normal}
-3. Create necessary iam roles
-4. Assign roles to  service account ${bold}\"berlioz-robot\"${normal}
-5. Create key for service account ${bold}\"berlioz-robot\"${normal}
+2. Create service account ${bold}\"cicd-robot\"${normal}
+4. Assign Owner role to service account ${bold}\"cicd-robot\"${normal}
+5. Create key for service account ${bold}\"cicd-robot\"${normal}
 "
 pause_for 1
 
 if [[ $QUIET ]]; then 
     print_status "In quiet mode."
 fi
+
+if [[ -z $PROJECT_ID ]]; then
+    bail_with_error \
+        "ERROR: Project name not provided. Usage:" \
+        "create.sh -p <project-name>" 
+fi 
 
 print_status "Checking if GCloudSDK is installed"
 exec_cmd "command -v gcloud" \
@@ -387,61 +305,33 @@ else
 fi
 print_status "Selected GCP Account: $GCP_ACCOUNT_ID"
 
-print_status "GCP Project"
-if [[ -z $PROJECT_ID ]]; then
-    exec_cmd_no_output "gcloud projects list" \
-        "ERROR: Could not get list of GCP projects" \
-        "" \
-        result
+print_status "Creating GCP Project $PROJECT_ID ..."
 
-    PROJECT_ID_LIST=($(echo "$result" | tail -n +2 | cut -d' ' -f1))
-    PROJECT_COUNT=${#PROJECT_ID_LIST[@]}
-    print_status "Choose GCP Project below:"
-    for ((i=0; i<PROJECT_COUNT; i++)); do
-        project_id=${PROJECT_ID_LIST[$i]}
-        project_index=$((i+1))
-        echo "$project_index) $project_id"
-    done
-    if [[ $QUIET ]]; then 
-        if [[ -z $PROJECT_ID ]]; then
-            bail_with_error "ERROR. Using quiet mode but project id is not provided.";
-        fi
-    else
-        while true; do
-            read -p "Select project: " select_project_index
-            re='^[0-9]+$'
-            if [[ $select_project_index =~ $re ]] ; then
-                if [[ "$select_project_index" -ge "0" && "$select_project_index" -le "$PROJECT_COUNT" ]]; then
-                    select_project_index=$((select_project_index-1))
-                    PROJECT_ID=${PROJECT_ID_LIST[$select_project_index]}
-                    break;
-                else
-                    echo "ERROR. Invalid input. Index out of range.";
-                fi
-            else
-                echo "ERROR. Invalid input. Not a number";
-            fi
-        done
-    fi
-fi
-print_status "Using project: $PROJECT_ID"
+exec_cmd "gcloud projects create $PROJECT_ID" \
+    "ERROR: Could not create new GCP project" \
+    ""
+
+print_status "Activating GCP Project..."
 
 exec_cmd "gcloud config set project $PROJECT_ID" \
     "ERROR: Failed to set active project" \
     ""
 
-SVC_ACCOUNT_NAME=berlioz-robot
+print_status "Enabling APIs..."
+
+exec_cmd "gcloud services enable cloudresourcemanager.googleapis.com" \
+    "ERROR: Failed to enable APIs" \
+    ""
+
+
+SVC_ACCOUNT_NAME=cicd-robot
 
 setupServiceAccount "$SVC_ACCOUNT_NAME"
 
-print_header "GCP Account configured successfully!" \
-"You can now link the key with Berlioz account.
-
+print_header "GCP Project was successfully!" \
+"
 Credentials key is saved in: $CREDENTIALS_FILE
-Remember to keep it safe!
-
-Details here: 
-    https://docs.berlioz.cloud/cloud/gcp/account-setup/#link-gcp-with-berlioz"
+Remember to keep it safe!"
 }
 
 
@@ -469,85 +359,6 @@ do
     esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
-
-
-########################################################
-########### SETTING UP IAM ROLES #######################
-########################################################
-declare -A ROLE_NAMES
-declare -A ROLE_PERMISSIONS
-
-ROLE_NAMES[cloudsql]="Berlioz CloudSQL" 
-ROLE_PERMISSIONS[cloudsql]="
-cloudsql.instances.create
-cloudsql.instances.delete
-cloudsql.instances.get
-cloudsql.instances.import
-cloudsql.instances.list
-cloudsql.instances.update" 
-
-ROLE_NAMES[functions]="Berlioz Functions" 
-ROLE_PERMISSIONS[functions]="
-cloudfunctions.functions.create
-cloudfunctions.functions.delete
-cloudfunctions.functions.get
-cloudfunctions.functions.list
-cloudfunctions.functions.update
-cloudfunctions.locations.list
-cloudfunctions.operations.get
-cloudfunctions.operations.list" 
-
-ROLE_NAMES[iam]="Berlioz IAM" 
-ROLE_PERMISSIONS[iam]="
-iam.serviceAccountKeys.create
-iam.serviceAccountKeys.delete
-iam.serviceAccountKeys.get
-iam.serviceAccountKeys.list
-iam.serviceAccounts.create
-iam.serviceAccounts.delete
-iam.serviceAccounts.getIamPolicy
-iam.serviceAccounts.setIamPolicy
-iam.serviceAccounts.update
-resourcemanager.projects.getIamPolicy
-resourcemanager.projects.setIamPolicy"
-
-ROLE_NAMES[pubsub]="Berlioz PubSub" 
-ROLE_PERMISSIONS[pubsub]="
-pubsub.subscriptions.create
-pubsub.subscriptions.delete
-pubsub.subscriptions.get
-pubsub.subscriptions.getIamPolicy
-pubsub.subscriptions.list
-pubsub.subscriptions.setIamPolicy
-pubsub.subscriptions.update
-pubsub.topics.attachSubscription
-pubsub.topics.create
-pubsub.topics.delete
-pubsub.topics.get
-pubsub.topics.getIamPolicy
-pubsub.topics.list
-pubsub.topics.setIamPolicy
-pubsub.topics.update"
-
-ROLE_NAMES[serviceusage]="Berlioz Service Usage" 
-ROLE_PERMISSIONS[serviceusage]="
-serviceusage.services.get
-serviceusage.services.enable"
-
-ROLE_NAMES[storage]="Berlioz Storage" 
-ROLE_PERMISSIONS[storage]="
-storage.buckets.create
-storage.buckets.delete
-storage.buckets.get
-storage.buckets.getIamPolicy
-storage.buckets.list
-storage.buckets.setIamPolicy
-storage.buckets.update
-storage.objects.create
-storage.objects.delete
-storage.objects.get
-storage.objects.list
-storage.objects.update"
 
 
 ########################################################
