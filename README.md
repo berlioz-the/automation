@@ -13,10 +13,12 @@ The script does following:
 Running:
 
 ```bash
-# curl -sL https://docs.berlioz.cloud/scripts/gcp/init | bash -
+bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
 ```
+
 or
 
 ```bash
-# wget -qO- https://docs.berlioz.cloud/scripts/gcp/init | bash -
+bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
 ```
+

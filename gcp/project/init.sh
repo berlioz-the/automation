@@ -6,9 +6,9 @@
 # Script to configure GCP Project with Berlioz service account,
 # IAM roles and other dependencies.
 #
-# curl -sL https://docs.berlioz.cloud/scripts/gcp/init | bash -
+# bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
 #   or
-# wget -qO- https://docs.berlioz.cloud/scripts/gcp/init | bash -
+# bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
 #
 
 if test -t 1; then # if terminal
