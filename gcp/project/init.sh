@@ -202,6 +202,27 @@ createRole() {
                 "gcloud iam roles undelete $final_role_name --project $PROJECT_ID" \
                 result \
                 return_code
+
+            print_status "Querying the role after undelete: $final_role_name..."
+            exec_cmd_no_bail_no_output \
+                "gcloud iam roles describe $final_role_name --project $PROJECT_ID" \
+                existing_role \
+                existing_role_result
+            echo "$existing_role"
+        fi
+    fi
+
+    if [[ $existing_role_result == "0" ]]; then
+
+        is_deleted_value=$(echo "$existing_role" | grep "^deleted: true")
+        echo "$is_deleted_value"
+        if [[ ! -z $is_deleted_value ]]; then
+            print_status "Undeleting Role: $final_role_name..."
+
+            exec_cmd \
+                "gcloud iam roles undelete $final_role_name --project $PROJECT_ID" \
+                result \
+                return_code
         fi
 
         print_status "Updating Role: $final_role_name..."
