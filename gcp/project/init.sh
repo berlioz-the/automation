@@ -112,7 +112,7 @@ exec_cmd() {
     if [[ $return_code != "0" ]]; then
         bail_with_error "$2" "$3"
     fi
-    if [[ ! -z ${4+x} ]]; then 
+    if [[ ! -z ${4+x} ]]; then
         local  __resultvar=$4
         eval $__resultvar="'$result'"
     fi
@@ -123,7 +123,7 @@ exec_cmd_no_output() {
     if [[ $return_code != "0" ]]; then
         bail_with_error "$2" "$3"
     fi
-    if [[ ! -z ${4+x} ]]; then 
+    if [[ ! -z ${4+x} ]]; then
         local  __resultvar=$4
         eval $__resultvar="'$result'"
     fi
@@ -189,7 +189,7 @@ createRole() {
         "gcloud iam roles describe \"${final_role_name}\" --project \"${PROJECT_ID}\"" \
         existing_role \
         existing_role_result
-    
+
     if [[ $existing_role_result == "0" ]]; then
 
         is_deleted_value=$(echo "${existing_role}" | grep "^deleted: true")
@@ -220,7 +220,7 @@ createRole() {
             "gcloud iam roles update \"${final_role_name}\" --project \"${PROJECT_ID}\" --file \"${TMP_ROLE_FILE}\" --quiet" \
             result \
             return_code
-           
+
         rm ${TMP_ROLE_FILE}
         if [[ ${return_code} != "0" ]]; then
             bail_with_error \
@@ -236,7 +236,7 @@ createRole() {
             "gcloud iam roles create \"${final_role_name}\" --project \"${PROJECT_ID}\" --file \"${TMP_ROLE_FILE}\" --quiet" \
             result \
             return_code
-           
+
         rm ${TMP_ROLE_FILE}
         if [[ ${return_code} != "0" ]]; then
             bail_with_error \
@@ -269,7 +269,7 @@ setupRoles() {
         attachServiceAccountRole ${SVC_ACCOUNT_ID} ${role_id}
     done
 
-    default_role_arr=("roles/container.admin")
+    default_role_arr=("roles/container.admin" "roles/iam.serviceAccountUser")
     for role_id in "${default_role_arr}"
     do
         attachServiceAccountRole ${SVC_ACCOUNT_ID} ${role_id}
@@ -299,7 +299,7 @@ createServiceAccountKey() {
     exec_cmd "gcloud iam service-accounts keys create \"${CREDENTIALS_FILE}\" --iam-account=\"${SVC_ACCOUNT_ID}\" --key-file-type=json" \
         "ERROR: Could not create key for service account ${SVC_ACCOUNT_ID}" \
         ""
-        
+
     print_status "Key saved in: ${CREDENTIALS_FILE}"
 }
 
@@ -350,7 +350,7 @@ print_header "Berlioz GCP Account Setup Script" \
 "
 pause_for 1
 
-if [[ ${QUIET} ]]; then 
+if [[ ${QUIET} ]]; then
     print_status "In quiet mode."
 fi
 
@@ -360,12 +360,12 @@ exec_cmd "command -v gcloud" \
     "You can install it from here: https://cloud.google.com/sdk/docs/quickstarts" \
 
 print_status "Getting GCP Account ID"
-if [[ ${QUIET} ]]; then 
+if [[ ${QUIET} ]]; then
     fetchGCPAccoutId
     if [[ -z ${GCP_ACCOUNT_ID} ]]; then
         "ERROR: Not logged in to gcloud cli." \
-        "Try running \"gcloud auth login\"." 
-    fi 
+        "Try running \"gcloud auth login\"."
+    fi
 else
     while true; do
         fetchGCPAccoutId
@@ -373,7 +373,7 @@ else
             print_status "Not logged in to GCP"
         else
             confirmGCPAccount
-        fi 
+        fi
         if [[ -z ${GCP_ACCOUNT_ID} ]]; then
             loginToGCP
         fi
@@ -399,7 +399,7 @@ if [[ -z ${PROJECT_ID} ]]; then
         project_index=$((i+1))
         echo "${project_index}) ${project_id}"
     done
-    if [[ $QUIET ]]; then 
+    if [[ $QUIET ]]; then
         if [[ -z ${PROJECT_ID} ]]; then
             bail_with_error "ERROR. Using quiet mode but project id is not provided.";
         fi
@@ -437,7 +437,7 @@ print_header "GCP Account configured successfully!" \
 Credentials key is saved in: ${CREDENTIALS_FILE}
 Remember to keep it safe!
 
-Details here: 
+Details here:
     https://docs.berlioz.cloud/cloud/gcp/account-setup/#link-gcp-with-berlioz"
 }
 
@@ -474,16 +474,16 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 declare -A ROLE_NAMES
 declare -A ROLE_PERMISSIONS
 
-ROLE_NAMES[cloudsql]="Berlioz CloudSQL" 
+ROLE_NAMES[cloudsql]="Berlioz CloudSQL"
 ROLE_PERMISSIONS[cloudsql]="
 cloudsql.instances.create
 cloudsql.instances.delete
 cloudsql.instances.get
 cloudsql.instances.import
 cloudsql.instances.list
-cloudsql.instances.update" 
+cloudsql.instances.update"
 
-ROLE_NAMES[functions]="Berlioz Functions" 
+ROLE_NAMES[functions]="Berlioz Functions"
 ROLE_PERMISSIONS[functions]="
 cloudfunctions.functions.create
 cloudfunctions.functions.delete
@@ -492,9 +492,9 @@ cloudfunctions.functions.list
 cloudfunctions.functions.update
 cloudfunctions.locations.list
 cloudfunctions.operations.get
-cloudfunctions.operations.list" 
+cloudfunctions.operations.list"
 
-ROLE_NAMES[iam]="Berlioz IAM" 
+ROLE_NAMES[iam]="Berlioz IAM"
 ROLE_PERMISSIONS[iam]="
 iam.serviceAccountKeys.create
 iam.serviceAccountKeys.delete
@@ -508,7 +508,7 @@ iam.serviceAccounts.update
 resourcemanager.projects.getIamPolicy
 resourcemanager.projects.setIamPolicy"
 
-ROLE_NAMES[pubsub]="Berlioz PubSub" 
+ROLE_NAMES[pubsub]="Berlioz PubSub"
 ROLE_PERMISSIONS[pubsub]="
 pubsub.subscriptions.create
 pubsub.subscriptions.delete
@@ -526,12 +526,12 @@ pubsub.topics.list
 pubsub.topics.setIamPolicy
 pubsub.topics.update"
 
-ROLE_NAMES[serviceusage]="Berlioz Service Usage" 
+ROLE_NAMES[serviceusage]="Berlioz Service Usage"
 ROLE_PERMISSIONS[serviceusage]="
 serviceusage.services.get
 serviceusage.services.enable"
 
-ROLE_NAMES[storage]="Berlioz Storage" 
+ROLE_NAMES[storage]="Berlioz Storage"
 ROLE_PERMISSIONS[storage]="
 storage.buckets.create
 storage.buckets.delete
