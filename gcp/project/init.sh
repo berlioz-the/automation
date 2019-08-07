@@ -270,7 +270,7 @@ setupRoles() {
     done
 
     default_role_arr=("roles/container.admin" "roles/iam.serviceAccountUser")
-    for role_id in "${default_role_arr}"
+    for role_id in "${default_role_arr[@]}"
     do
         attachServiceAccountRole ${SVC_ACCOUNT_ID} ${role_id}
     done
