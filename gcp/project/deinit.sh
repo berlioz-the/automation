@@ -3,13 +3,6 @@
 # Discussion, issues and change requests at:
 #   https://support.berlioz.cloud
 #
-# Script to configure GCP Project with Berlioz service account,
-# IAM roles and other dependencies.
-#
-# bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
-#   or
-# bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/init.sh)"
-#
 
 if test -t 1; then # if terminal
     ncolors=$(which tput > /dev/null && tput colors) # supports color
@@ -334,7 +327,7 @@ runner() {
 
 print_header "Berlioz GCP Project Cleanup Script" \
 "Steps to be performed in this script:
-1. Remove ${bold}\"berlioz-robot\"${normal} service account 
+1. Remove ${bold}\"berlioz-robot\"${normal} service account
 2. Remove berlioz iam roles
 3. Disable kubernetes and other APIs.
 "
