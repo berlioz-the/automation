@@ -547,6 +547,12 @@ storage.objects.list
 storage.objects.update"
 
 
+ROLE_NAMES[staticaddress]="Berlioz Static Address"
+ROLE_PERMISSIONS[staticaddress]="
+compute.globalAddresses.get
+compute.globalAddresses.create"
+
+
 ########################################################
 ##################### RUNNING ##########################
 ########################################################
