@@ -285,13 +285,13 @@ createServiceAccountKey() {
         "ERROR: Could not get service-account ${SVC_ACCOUNT_ID} keys" \
         "" \
         result
-    echo "${result}" | cut -d' ' -f1 | tail -n +2 | sed -e '$ d' | while read -r key_id
+    echo "${result}" | cut -d' ' -f1 | tail -n +2 | while read -r key_id
     do
         print_status "Deleting key ${key_id}..."
 
-        exec_cmd "gcloud iam service-accounts keys delete \"${key_id}\" --iam-account=\"${SVC_ACCOUNT_ID}\" --quiet" \
-            "ERROR: Could not delete key ${key_id} for service-account ${SVC_ACCOUNT_ID}" \
-            ""
+        exec_cmd_no_bail "gcloud iam service-accounts keys delete \"${key_id}\" --iam-account=\"${SVC_ACCOUNT_ID}\" --quiet" \
+            delete_result \
+            delete_return_code
     done
 
     print_status "Creating key for ${key_id}..."

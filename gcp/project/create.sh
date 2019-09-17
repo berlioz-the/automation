@@ -201,13 +201,13 @@ createServiceAccountKey() {
     while read -r line; do
         CURRENT_KEYS_ARR+=("$line")
     done <<< "$CURRENT_KEYS_STR"
-    for ((i=0; i<${#CURRENT_KEYS_ARR[@]}-1; i++)); do
+    for ((i=0; i<${#CURRENT_KEYS_ARR[@]}; i++)); do
         key_id=${CURRENT_KEYS_ARR[$i]}
         print_status "Deleting key $key_id..."
 
         exec_cmd "gcloud iam service-accounts keys delete $key_id --iam-account=$SVC_ACCOUNT_ID --quiet" \
-            "ERROR: Could not delete key $key_id for service-account $SVC_ACCOUNT_ID" \
-            "Reason: $result"
+            delete_result \
+            delete_return_code
     done
 
     print_status "Creating key for $key_id..."
