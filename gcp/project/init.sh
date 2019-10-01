@@ -163,12 +163,13 @@ concat_line() {
 
 createRole() {
     local role_name=$1
+    local role_index=$2
     final_role_name=berlioz.${role_name}
     print_status "Querying role: ${final_role_name}..."
     local role_id="projects/${PROJECT_ID}/roles/berlioz.${role_name}"
 
-    local role_title=${ROLE_NAMES[${role_name}]}
-    local role_permissions_str=${ROLE_PERMISSIONS[${role_name}]}
+    local role_title=${ROLE_NAMES[$role_index]}
+    local role_permissions_str=${ROLE_PERMISSIONS[$role_index]}
 
     TMP_ROLE_FILE=berlioz-role-$$.yaml
 
@@ -262,10 +263,12 @@ attachServiceAccountRole() {
 setupRoles() {
     print_status "Creating roles..."
 
-    for role_key in "${!ROLE_NAMES[@]}"
+    for i in "${!ROLE_IDS[@]}"
     do
-        role_id="projects/${PROJECT_ID}/roles/berlioz.${role_key}"
-        createRole ${role_key}
+        local role_key=${ROLE_IDS[$i]}
+        createRole ${role_key} ${i}
+
+        local role_id="projects/${PROJECT_ID}/roles/berlioz.${role_key}"
         attachServiceAccountRole ${SVC_ACCOUNT_ID} ${role_id}
     done
 
@@ -471,11 +474,14 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 ########################################################
 ########### SETTING UP IAM ROLES #######################
 ########################################################
-declare -A ROLE_NAMES
-declare -A ROLE_PERMISSIONS
 
-ROLE_NAMES[cloudsql]="Berlioz CloudSQL"
-ROLE_PERMISSIONS[cloudsql]="
+ROLE_IDS=()
+ROLE_NAMES=()
+ROLE_PERMISSIONS=()
+
+ROLE_IDS[0]="cloudsql"
+ROLE_NAMES[0]="Berlioz CloudSQL"
+ROLE_PERMISSIONS[0]="
 cloudsql.instances.create
 cloudsql.instances.delete
 cloudsql.instances.get
@@ -483,8 +489,9 @@ cloudsql.instances.import
 cloudsql.instances.list
 cloudsql.instances.update"
 
-ROLE_NAMES[functions]="Berlioz Functions"
-ROLE_PERMISSIONS[functions]="
+ROLE_IDS[1]="functions"
+ROLE_NAMES[1]="Berlioz Functions"
+ROLE_PERMISSIONS[1]="
 cloudfunctions.functions.create
 cloudfunctions.functions.delete
 cloudfunctions.functions.get
@@ -494,8 +501,9 @@ cloudfunctions.locations.list
 cloudfunctions.operations.get
 cloudfunctions.operations.list"
 
-ROLE_NAMES[iam]="Berlioz IAM"
-ROLE_PERMISSIONS[iam]="
+ROLE_IDS[2]="iam"
+ROLE_NAMES[2]="Berlioz IAM"
+ROLE_PERMISSIONS[2]="
 iam.serviceAccountKeys.create
 iam.serviceAccountKeys.delete
 iam.serviceAccountKeys.get
@@ -508,8 +516,9 @@ iam.serviceAccounts.update
 resourcemanager.projects.getIamPolicy
 resourcemanager.projects.setIamPolicy"
 
-ROLE_NAMES[pubsub]="Berlioz PubSub"
-ROLE_PERMISSIONS[pubsub]="
+ROLE_IDS[3]="pubsub"
+ROLE_NAMES[3]="Berlioz PubSub"
+ROLE_PERMISSIONS[3]="
 pubsub.subscriptions.create
 pubsub.subscriptions.delete
 pubsub.subscriptions.get
@@ -526,13 +535,15 @@ pubsub.topics.list
 pubsub.topics.setIamPolicy
 pubsub.topics.update"
 
-ROLE_NAMES[serviceusage]="Berlioz Service Usage"
-ROLE_PERMISSIONS[serviceusage]="
+ROLE_IDS[4]="serviceusage"
+ROLE_NAMES[4]="Berlioz Service Usage"
+ROLE_PERMISSIONS[4]="
 serviceusage.services.get
 serviceusage.services.enable"
 
-ROLE_NAMES[storage]="Berlioz Storage"
-ROLE_PERMISSIONS[storage]="
+ROLE_IDS[5]="storage"
+ROLE_NAMES[5]="Berlioz Storage"
+ROLE_PERMISSIONS[5]="
 storage.buckets.create
 storage.buckets.delete
 storage.buckets.get
@@ -546,9 +557,9 @@ storage.objects.get
 storage.objects.list
 storage.objects.update"
 
-
-ROLE_NAMES[staticaddress]="Berlioz Static Address"
-ROLE_PERMISSIONS[staticaddress]="
+ROLE_IDS[6]="staticaddress"
+ROLE_NAMES[6]="Berlioz Static Address"
+ROLE_PERMISSIONS[6]="
 compute.globalAddresses.get
 compute.globalAddresses.create"
 
