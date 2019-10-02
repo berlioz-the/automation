@@ -47,3 +47,19 @@ then
 chmod +x create.sh
 ./create.sh -p <project-name> [-q]
 ```
+
+## GCP Project Cleanup
+A script to cleanup GCP Project after Kubernetes cluster is deleted.
+There are some resources likes LB and static IPs that GKE leaves behind.
+
+Run using:
+
+```bash
+bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/cleanup.sh)"
+```
+
+or
+
+```bash
+bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/cleanup.sh)"
+```
