@@ -129,6 +129,28 @@ exec_cmd_no_output() {
     fi
 }
 
+### 
+BG_PIDS=()
+exec_cmd_bg() {
+    local result=''
+    local return_code=''
+    exec_cmd_no_bail "$1" result return_code &
+    local mypid=$!
+    echo "Started PID ${mypid}..."
+    BG_PIDS+=(${mypid})
+}
+
+wait_bg_finish() {
+    # echo "Waiting ..."
+    echo "${BG_PIDS[*]}"
+    for pid in ${BG_PIDS[*]}; do
+        # echo "Waiting PID ${pid}..."
+        wait $pid
+    done
+    echo "Waiting Completed."
+    echo "${BG_PIDS[*]}"
+}
+
 ##################
 
 
@@ -254,10 +276,9 @@ do
     local region=$(echo ${line} | awk '{print $2}')
     print_status "Deleting rule ${id} in ${region}..."
 
-    exec_cmd_no_bail "gcloud compute forwarding-rules delete \"${id}\" --quiet --region \"${region}\"" \
-        delete_result \
-        delete_return_code
+    exec_cmd_bg "gcloud compute forwarding-rules delete \"${id}\" --quiet --region \"${region}\"" 
 done
+wait_bg_finish
 
 #####
 #####
@@ -274,10 +295,9 @@ do
     local region=$(echo ${line} | awk '{print $2}')
     print_status "Deleting forwarding rule ${id} in ${region}..."
 
-    exec_cmd_no_bail "gcloud compute addresses delete \"${id}\" --quiet --region \"${region}\"" \
-        delete_result \
-        delete_return_code
+    exec_cmd_bg "gcloud compute addresses delete \"${id}\" --quiet --region \"${region}\"" 
 done
+wait_bg_finish
 
 #####
 #####
@@ -293,10 +313,49 @@ do
     local id=$(echo ${line} | awk '{print $1}')
     print_status "Deleting firewall rule ${id}..."
 
-    exec_cmd_no_bail "gcloud compute firewall-rules delete \"${id}\" --quiet" \
-        delete_result \
-        delete_return_code
+    exec_cmd_bg "gcloud compute firewall-rules delete \"${id}\" --quiet" 
 done
+wait_bg_finish
+
+#####
+#####
+#####
+# print_status "Cleaning up instance groups"
+
+# exec_cmd "gcloud compute instance-groups unmanaged list" \
+#     "ERROR: Could not get list of instance groups" \
+#     "" \
+#     result
+# echo "${result}" | tail -n +2 | while read -r line
+# do
+#     local id=$(echo ${line} | awk '{print $1}')
+#     local region=$(echo ${line} | awk '{print $2}')
+#     print_status "Deleting instance group ${id} at ${region}..."
+
+#     exec_cmd_no_bail "gcloud compute instance-groups unmanaged delete \"${id}\" --zone \"${region}\" --quiet" \
+#         delete_result \
+#         delete_return_code
+# done
+
+
+#####
+#####
+#####
+print_status "Cleaning up load balancer target pools"
+
+exec_cmd "gcloud compute target-pools list" \
+    "ERROR: Could not get list of load balancer target pools" \
+    "" \
+    result
+echo "${result}" | tail -n +2 | while read -r line
+do
+    local id=$(echo ${line} | awk '{print $1}')
+    local region=$(echo ${line} | awk '{print $2}')
+    print_status "Deleting load balancer target pool ${id} at ${region}..."
+
+    exec_cmd_bg "gcloud compute target-pools delete \"${id}\" --region \"${region}\" --quiet" 
+done
+wait_bg_finish
 
 }
 
@@ -328,4 +387,5 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 ########################################################
 ##################### RUNNING ##########################
 ########################################################
+
 runner
