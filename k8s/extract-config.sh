@@ -2,7 +2,7 @@
 
 PARALLEL_MAX=5
 function start_job() {
-  while [ $(ps -eo ppid | awk 'NR>1' | grep -w $$  | wc -l) -gt $PARALLEL_MAX ]; do
+  while [ $(ps -f | awk '{print $2}' | awk 'NR>1' | grep -w $$  | wc -l) -gt $PARALLEL_MAX ]; do
     sleep .1
   done
   echo "Running '$@' ..."
