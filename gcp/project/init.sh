@@ -306,6 +306,14 @@ createServiceAccountKey() {
     print_status "Key saved in: ${CREDENTIALS_FILE}"
 }
 
+enableServiceUsage() {
+    local SERVICE_NAME=$1
+
+    exec_cmd "gcloud services enable ${SERVICE_NAME}" \
+        "ERROR: Could not enable api ${SERVICE_NAME}" \
+        ""
+}
+
 setupServiceAccount() {
     SVC_ACCOUNT_NAME=$1
     SVC_ACCOUNT_ID=${SVC_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
@@ -430,8 +438,9 @@ exec_cmd "gcloud config set project \"${PROJECT_ID}\"" \
     "ERROR: Failed to set active project" \
     ""
 
-SVC_ACCOUNT_NAME=berlioz-robot
+enableServiceUsage "cloudresourcemanager.googleapis.com"
 
+SVC_ACCOUNT_NAME=berlioz-robot
 setupServiceAccount "${SVC_ACCOUNT_NAME}"
 
 print_header "GCP Account configured successfully!" \
