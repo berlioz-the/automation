@@ -63,3 +63,18 @@ or
 ```bash
 bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/gcp/project/cleanup.sh)"
 ```
+
+## Extract Kubernetes Config
+Extracts entire K8s configuration into files.
+
+Run using:
+
+```bash
+bash -c "$(curl -sL https://raw.githubusercontent.com/berlioz-the/automation/master/k8s/extract-config.sh)"
+```
+
+or
+
+```bash
+bash -c "$(wget -qO- https://raw.githubusercontent.com/berlioz-the/automation/master/k8s/extract-config.sh)"
+```
