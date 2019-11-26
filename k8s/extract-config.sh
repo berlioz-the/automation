@@ -15,8 +15,10 @@ kubectl api-resources -o name | while read resource; do
   fi
   kubectl get $resource --all-namespaces -o go-template --template='{{range .items}}{{if .metadata.namespace}}{{.metadata.namespace}}{{else}}_{{end}} {{.metadata.name}}{{"\n"}}{{end}}' | while IFS=" " read -r namespace name; do
     IFS='.' read -r -a array <<< "$resource"
-    dirname="${array[n-1]}"
     n=${#array[*]}
+    # echo "MyArray = ${array[@]}"
+    dirname="${array[n-1]}"
+    # echo "dirname = ${dirname}"
     for (( i = n-2; i >= 0; i-- ))
     do
         dirname="${dirname}.${array[i]}"
@@ -25,5 +27,6 @@ kubectl api-resources -o name | while read resource; do
     yamlfile="$dirname/$namespace.$name.yaml"
     if [ $namespace = "_" ]; then nsflag=""; else nsflag="-n $namespace"; fi
     start_job "kubectl get $resource $name $nsflag -o yaml > $yamlfile"
+    # kubectl get $resource $name $nsflag -o yaml > $yamlfile
   done
 done
