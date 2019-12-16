@@ -357,6 +357,27 @@ do
 done
 wait_bg_finish
 
+
+
+#####
+#####
+#####
+print_status "Cleaning up load balancer backend services"
+
+exec_cmd "gcloud compute backend-services list --global" \
+    "ERROR: Could not get list of backend services" \
+    "" \
+    result
+echo "${result}" | tail -n +2 | while read -r line
+do
+    local id=$(echo ${line} | awk '{print $1}')
+    local region=$(echo ${line} | awk '{print $2}')
+    print_status "Deleting backend service ${id}..."
+
+    exec_cmd_bg "gcloud compute backend-services delete \"${id}\" --global --quiet" 
+done
+wait_bg_finish
+
 }
 
 ########################################################
